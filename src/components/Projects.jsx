@@ -12,8 +12,18 @@ function Projects() {
   // Fetch backend data
   useEffect(() => {
     const fetchProjects = async () => {
+      if (!API_URL) {
+        console.warn("VITE_BACKEND_URL is not set. Using local data.");
+        return;
+      }
+
       try {
         const res = await fetch(`${API_URL}/api/projects`);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         const data = await res.json();
 
         if (data.success) {
@@ -57,7 +67,15 @@ function Projects() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {finalProjects.map((project, index) => (
-            <ProjectCard key={index} {...project} />
+            <ProjectCard 
+              key={project.id || index} 
+              title={project.title}
+              description={project.description}
+              image={project.image}
+              tech={project.tech}
+              demo={project.demo}
+              code={project.code}
+            />
           ))}
         </div>
 

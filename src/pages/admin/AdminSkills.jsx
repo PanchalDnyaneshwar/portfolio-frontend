@@ -14,15 +14,26 @@ export default function AdminSkills() {
   });
 
   const fetchSkills = async () => {
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/skills`, {
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
       setSkills(data.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch skills:", err);
       showToast("Failed to load skills");
     } finally {
       setLoading(false);
@@ -46,6 +57,16 @@ export default function AdminSkills() {
   }, [modal]);
 
   const saveSkill = async () => {
+    if (!form.title || !form.description) {
+      showToast("Title and description are required");
+      return;
+    }
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     const method = modal.mode === "add" ? "POST" : "PUT";
     const url =
       modal.mode === "add"
@@ -57,29 +78,51 @@ export default function AdminSkills() {
         headers: authHeaders,
         body: JSON.stringify(form),
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to save");
+      }
       showToast("Saved");
       setModal(null);
       fetchSkills();
-    } catch {
-      showToast("Save failed");
+    } catch (err) {
+      console.error("Save error:", err);
+      showToast(err.message || "Save failed");
     }
   };
 
   const deleteSkill = async (id) => {
     if (!confirm("Delete this skill?")) return;
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/admin/skills/${id}`, {
         method: "DELETE",
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to delete");
+      }
       showToast("Deleted");
       fetchSkills();
-    } catch {
-      showToast("Delete failed");
+    } catch (err) {
+      console.error("Delete error:", err);
+      showToast(err.message || "Delete failed");
     }
   };
 

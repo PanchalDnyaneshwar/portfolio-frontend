@@ -43,23 +43,43 @@ export default function AdminLayout() {
     }
     // Fetch quick stats for dashboard cards
     const fetchStats = async () => {
+      if (!API_URL) {
+        console.error("VITE_BACKEND_URL is not set.");
+        return;
+      }
+
       try {
         const [p, s, a, w, c] = await Promise.all([
           fetch(`${API_URL}/api/admin/projects`, {
             headers: authHeaders,
-          }).then((r) => r.json()),
+          }).then((r) => {
+            if (!r.ok) throw new Error(`Projects: ${r.status}`);
+            return r.json();
+          }),
           fetch(`${API_URL}/api/admin/skills`, {
             headers: authHeaders,
-          }).then((r) => r.json()),
+          }).then((r) => {
+            if (!r.ok) throw new Error(`Skills: ${r.status}`);
+            return r.json();
+          }),
           fetch(`${API_URL}/api/admin/about`, {
             headers: authHeaders,
-          }).then((r) => r.json()),
+          }).then((r) => {
+            if (!r.ok) throw new Error(`About: ${r.status}`);
+            return r.json();
+          }),
           fetch(`${API_URL}/api/admin/work`, {
             headers: authHeaders,
-          }).then((r) => r.json()),
+          }).then((r) => {
+            if (!r.ok) throw new Error(`Work: ${r.status}`);
+            return r.json();
+          }),
           fetch(`${API_URL}/api/admin/contacts`, {
             headers: authHeaders,
-          }).then((r) => r.json()),
+          }).then((r) => {
+            if (!r.ok) throw new Error(`Contacts: ${r.status}`);
+            return r.json();
+          }),
         ]);
 
         setStats({
@@ -70,7 +90,8 @@ export default function AdminLayout() {
           contacts: c.data?.length || 0,
         });
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch stats:", err);
+        showToast("Failed to load dashboard stats");
       }
     };
     fetchStats();

@@ -16,15 +16,26 @@ export default function AdminWork() {
   });
 
   const fetchWork = async () => {
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/work`, {
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
       setItems(data.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch work:", err);
       showToast("Failed to load work experience");
     } finally {
       setLoading(false);
@@ -56,6 +67,16 @@ export default function AdminWork() {
   }, [modal]);
 
   const saveWork = async () => {
+    if (!form.role || !form.company || !form.description) {
+      showToast("Role, company, and description are required");
+      return;
+    }
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     const method = modal.mode === "add" ? "POST" : "PUT";
     const url =
       modal.mode === "add"
@@ -68,31 +89,51 @@ export default function AdminWork() {
         headers: authHeaders,
         body: JSON.stringify(form),
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to save");
+      }
       showToast("Saved");
       setModal(null);
       fetchWork();
     } catch (err) {
-      console.error(err);
-      showToast("Save failed");
+      console.error("Save error:", err);
+      showToast(err.message || "Save failed");
     }
   };
 
   const deleteWork = async (id) => {
     if (!confirm("Delete this work experience?")) return;
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/admin/work/${id}`, {
         method: "DELETE",
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to delete");
+      }
       showToast("Deleted");
       fetchWork();
     } catch (err) {
-      console.error(err);
-      showToast("Delete failed");
+      console.error("Delete error:", err);
+      showToast(err.message || "Delete failed");
     }
   };
 

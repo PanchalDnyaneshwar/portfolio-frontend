@@ -14,15 +14,26 @@ export default function AdminAbout() {
   });
 
   const fetchAbout = async () => {
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/about`, {
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
       setItems(data.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch about:", err);
       showToast("Failed to load about cards");
     } finally {
       setLoading(false);
@@ -50,6 +61,16 @@ export default function AdminAbout() {
   }, [modal]);
 
   const saveAbout = async () => {
+    if (!form.title || !form.description) {
+      showToast("Title and description are required");
+      return;
+    }
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     const method = modal.mode === "add" ? "POST" : "PUT";
     const url =
       modal.mode === "add"
@@ -62,31 +83,51 @@ export default function AdminAbout() {
         headers: authHeaders,
         body: JSON.stringify(form),
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error("Failed");
+      if (!data.success) {
+        throw new Error(data.message || "Failed to save");
+      }
       showToast("Saved");
       setModal(null);
       fetchAbout();
     } catch (err) {
-      console.error(err);
-      showToast("Save failed");
+      console.error("Save error:", err);
+      showToast(err.message || "Save failed");
     }
   };
 
   const deleteAbout = async (id) => {
     if (!confirm("Delete this about card?")) return;
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/admin/about/${id}`, {
         method: "DELETE",
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error("Failed");
+      if (!data.success) {
+        throw new Error(data.message || "Failed to delete");
+      }
       showToast("Deleted");
       fetchAbout();
     } catch (err) {
-      console.error(err);
-      showToast("Delete failed");
+      console.error("Delete error:", err);
+      showToast(err.message || "Delete failed");
     }
   };
 

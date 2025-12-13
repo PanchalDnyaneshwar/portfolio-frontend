@@ -10,8 +10,18 @@ function Skills() {
   // Fetch skills from backend
   useEffect(() => {
     const fetchSkills = async () => {
+      if (!API_URL) {
+        console.warn("VITE_BACKEND_URL is not set. Using local data.");
+        return;
+      }
+
       try {
         const res = await fetch(`${API_URL}/api/skills`);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         const data = await res.json();
 
         if (data.success) {

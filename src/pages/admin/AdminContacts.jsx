@@ -7,15 +7,26 @@ export default function AdminContacts() {
   const [loading, setLoading] = useState(true);
 
   const fetchContacts = async () => {
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/contacts`, {
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
       setContacts(data.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch contacts:", err);
       showToast("Failed to load messages");
     } finally {
       setLoading(false);
@@ -28,18 +39,31 @@ export default function AdminContacts() {
 
   const deleteContact = async (id) => {
     if (!confirm("Delete this message?")) return;
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/admin/contacts/${id}`, {
         method: "DELETE",
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to delete");
+      }
       showToast("Message deleted");
       fetchContacts();
     } catch (err) {
-      console.error(err);
-      showToast("Delete failed");
+      console.error("Delete error:", err);
+      showToast(err.message || "Delete failed");
     }
   };
 

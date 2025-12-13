@@ -17,6 +17,16 @@ export default function AdminLogin() {
     e.preventDefault();
     setErrorMsg("");
 
+    if (!API_URL) {
+      setErrorMsg("Backend URL is not configured. Please contact the administrator.");
+      return;
+    }
+
+    if (!email || !password) {
+      setErrorMsg("Please fill in all fields.");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/admin/auth/login`, {
         method: "POST",
@@ -24,6 +34,9 @@ export default function AdminLogin() {
         body: JSON.stringify({ email, password }),
       });
 
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -32,9 +45,15 @@ export default function AdminLogin() {
         return;
       }
 
+      if (!data.token) {
+        setErrorMsg("No token received from server.");
+        return;
+      }
+
       localStorage.setItem("adminToken", data.token);
       window.location.href = "/admin";
-    } catch {
+    } catch (err) {
+      console.error("Login error:", err);
       setErrorMsg("Server error. Please try again.");
     }
   };

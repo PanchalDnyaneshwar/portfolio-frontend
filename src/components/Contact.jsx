@@ -26,8 +26,22 @@ function Contact() {
         setErrorMsg("");
 
         // Basic validation
-        if (!form.name || !form.email || !form.message) {
+        if (!form.name || !form.email || !form.subject || !form.message) {
             setErrorMsg("Please fill all fields.");
+            setLoading(false);
+            return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(form.email)) {
+            setErrorMsg("Please enter a valid email address.");
+            setLoading(false);
+            return;
+        }
+
+        if (!API_URL) {
+            setErrorMsg("Backend URL is not configured. Please contact the administrator.");
             setLoading(false);
             return;
         }
@@ -39,15 +53,20 @@ function Contact() {
                 body: JSON.stringify(form)
             });
 
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+
             const data = await res.json();
 
             if (data.success) {
                 setSuccessMsg("Message sent successfully! 🎉");
-                setForm({ name: "", email: "",subject: "", message: "" });
+                setForm({ name: "", email: "", subject: "", message: "" });
             } else {
                 setErrorMsg(data.message || "Something went wrong.");
             }
         } catch (err) {
+            console.error("Contact form error:", err);
             setErrorMsg("Server error. Try again later.");
         }
 

@@ -17,15 +17,26 @@ export default function AdminProjects() {
   });
 
   const fetchProjects = async () => {
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/projects`, {
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
       setProjects(data.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch projects:", err);
       showToast("Failed to load projects");
     } finally {
       setLoading(false);
@@ -59,6 +70,17 @@ export default function AdminProjects() {
   }, [modal]);
 
   const saveProject = async () => {
+    // Validation
+    if (!form.title || !form.description) {
+      showToast("Title and description are required");
+      return;
+    }
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     const method = modal.mode === "add" ? "POST" : "PUT";
     const url =
       modal.mode === "add"
@@ -71,31 +93,51 @@ export default function AdminProjects() {
         headers: authHeaders,
         body: JSON.stringify(form),
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error("Failed");
+      if (!data.success) {
+        throw new Error(data.message || "Failed to save");
+      }
       showToast("Saved");
       setModal(null);
       fetchProjects();
     } catch (err) {
-      console.error(err);
-      showToast("Save failed");
+      console.error("Save error:", err);
+      showToast(err.message || "Save failed");
     }
   };
 
   const deleteProject = async (id) => {
     if (!confirm("Delete this project?")) return;
+
+    if (!API_URL) {
+      showToast("Backend URL not configured");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/admin/projects/${id}`, {
         method: "DELETE",
         headers: authHeaders,
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!data.success) throw new Error("Failed");
+      if (!data.success) {
+        throw new Error(data.message || "Failed to delete");
+      }
       showToast("Deleted");
       fetchProjects();
     } catch (err) {
-      console.error(err);
-      showToast("Delete failed");
+      console.error("Delete error:", err);
+      showToast(err.message || "Delete failed");
     }
   };
 
